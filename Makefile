@@ -67,43 +67,9 @@ minio: ## Start a transient container with a recent version of minio (s3)
 minio-stop: ## Stop and remove the minio container
 	docker stop plausible_minio
 
-sso:
-	$(call require, integration_id)
-	@echo "Setting up local IdP service..."
-	@docker run --name=idp \
-  -p 8080:8080 \
-  -e SIMPLESAMLPHP_SP_ENTITY_ID=http://localhost:8000/sso/$(integration_id) \
-  -e SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE=http://localhost:8000/sso/saml/consume/$(integration_id) \
-  -v $$PWD/extra/fixture/authsources.php:/var/www/simplesamlphp/config/authsources.php -d kenchan0130/simplesamlphp
-
-	@sleep 2
-
-	@echo "Use the following IdP configuration:" 
-	@echo ""
-	@echo "Sign-in URL: http://localhost:8080/simplesaml/saml2/idp/SSOService.php"
-	@echo ""
-	@echo "Entity ID: http://localhost:8080/simplesaml/saml2/idp/metadata.php"
-	@echo ""
-	@echo "PEM Certificate:"
-	@curl http://localhost:8080/simplesaml/module.php/saml/idp/certs.php/idp.crt 2>/dev/null
-	@echo ""
-	@echo ""
-	@echo "Following accounts are configured:"
-	@echo "- user@plausible.test / plausible"
-	@echo "- user1@plausible.test / plausible"
-	@echo "- user2@plausible.test / plausible"
-	
 sso-stop:
 	docker stop idp
 	docker remove idp
-
-generate-corefile:
-	$(call require, domain_id)
-	domain_id=$(domain_id) envsubst < $(PWD)/extra/fixture/Corefile.template > $(PWD)/extra/fixture/Corefile.gen.$(domain_id)
-
-mock-dns: generate-corefile
-	$(call require, domain_id)
-	docker run --rm -p 5354:53/udp -v $(PWD)/extra/fixture/Corefile.gen.$(domain_id):/Corefile coredns/coredns:latest -conf Corefile
 
 loadtest-server:
 	@echo "Ensure your OTP installation is built with --enable-lock-counter"

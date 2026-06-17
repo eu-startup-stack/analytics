@@ -71,24 +71,6 @@ defmodule PlausibleWeb do
     end
   end
 
-  on_ee do
-    def extra_view do
-      quote do
-        use Phoenix.View,
-          root: "extra/lib/plausible_web/templates"
-
-        # Import convenience functions from controllers
-        import Phoenix.Controller, only: [view_module: 1]
-
-        use Phoenix.Component
-
-        import PlausibleWeb.Components.Generic
-        import PlausibleWeb.Live.Components.Form
-        alias PlausibleWeb.Router.Helpers, as: Routes
-      end
-    end
-  end
-
   def router do
     quote do
       use Phoenix.Router

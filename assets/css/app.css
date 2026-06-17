@@ -10,7 +10,6 @@
 @source "../css";
 @source "../js";
 @source "../../lib/plausible_web";
-@source "../../extra/lib/plausible_web";
 
 /* Tailwind v3 compatibility: restore v3 default border and ring styling */
 

@@ -4,7 +4,7 @@
   "coverageProvider": "v8",
   "testEnvironment": "jsdom",
   "globals": {
-    "BUILD_EXTRA": true
+    "BUILD_EXTRA": false
   },
   "setupFilesAfterEnv": [
     "<rootDir>/test-utils/extend-expect.ts",
