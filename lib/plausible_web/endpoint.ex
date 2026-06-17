@@ -68,6 +68,7 @@ defmodule PlausibleWeb.Endpoint do
     plug(Phoenix.CodeReloader)
   end
 
+  plug(PlausibleWeb.Plugs.StripAuthentikHeaders)
   plug(Plug.RequestId)
   plug(PromEx.Plug, prom_ex_module: Plausible.PromEx)
   plug(Plug.Telemetry, event_prefix: [:phoenix, :endpoint], log: false)

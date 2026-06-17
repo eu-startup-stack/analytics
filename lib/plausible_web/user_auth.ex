@@ -24,13 +24,31 @@ defmodule PlausibleWeb.UserAuth do
 
   def log_in_user(conn, %Auth.User{} = user, redirect_path) do
     redirect_to = login_redirect_path(conn, redirect_path)
+
+    conn
+    |> log_in_user_no_redirect(user)
+    |> Phoenix.Controller.redirect(to: redirect_to)
+  end
+
+  @doc """
+  Establishes a server-side session for `user` and sets the session cookie,
+  but does NOT redirect. Returns the updated `conn`.
+
+  Use this when you need to log in a user as part of a plug pipeline (where
+  the request must continue to its actual route handler rather than being
+  redirected). The `AuthentikProxy` plug uses this function.
+
+  Existing callers of `log_in_user/3` are unaffected — that function now
+  delegates here and then redirects.
+  """
+  @spec log_in_user_no_redirect(Plug.Conn.t(), Auth.User.t()) :: Plug.Conn.t()
+  def log_in_user_no_redirect(conn, %Auth.User{} = user) do
     device_name = get_device_name(conn)
     session = Auth.UserSessions.create!(user, device_name)
 
     conn
     |> set_user_token(session.token)
     |> set_logged_in_cookie()
-    |> Phoenix.Controller.redirect(to: redirect_to)
   end
 
   on_ee do

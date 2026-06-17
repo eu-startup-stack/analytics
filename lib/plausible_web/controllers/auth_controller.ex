@@ -45,6 +45,30 @@ defmodule PlausibleWeb.AuthController do
   plug Plausible.Plugs.RestrictUserType,
        [deny: :sso] when action in [:delete_me, :disable_2fa]
 
+  # When Authentik proxy auth is enabled, self-service password/activation/2FA-setup
+  # routes are meaningless (Authentik handles auth factors). Redirect to / so the
+  # user lands on the dashboard. Login/register/verify-2FA are NOT in this list
+  # because RequireLoggedOutPlug already redirects logged-in users to /sites, and
+  # under Authentik mode the user is always logged in before reaching the controller.
+  plug(
+    :skip_self_service_when_authentik
+    when action in [
+           :activate_form,
+           :activate,
+           :request_activation_code,
+           :password_reset_request_form,
+           :password_reset_request,
+           :password_reset_form,
+           :password_reset,
+           :force_initiate_2fa_setup,
+           :initiate_2fa_setup,
+           :verify_2fa_setup_form,
+           :verify_2fa_setup,
+           :disable_2fa,
+           :generate_2fa_recovery_codes
+         ]
+  )
+
   plug(
     :clear_2fa_user
     when action not in [
@@ -704,5 +728,18 @@ defmodule PlausibleWeb.AuthController do
 
   defp redirect_to_login(conn) do
     redirect(conn, to: Routes.auth_path(conn, :login_form))
+  end
+
+  # When Authentik proxy auth is enabled, self-service auth UI routes are skipped.
+  # The user is already authenticated by the proxy; local password/activation/2FA-setup
+  # flows are not applicable.
+  defp skip_self_service_when_authentik(conn, _opts) do
+    if Plausible.Auth.Authentik.enabled?() do
+      conn
+      |> Phoenix.Controller.redirect(to: "/")
+      |> halt()
+    else
+      conn
+    end
   end
 end

@@ -312,6 +312,39 @@ if disable_registration not in [true, false, :invite_only] do
   raise "DISABLE_REGISTRATION must be one of `true`, `false`, or `invite_only`. See https://github.com/plausible/community-edition/wiki/configuration#disable_registration"
 end
 
+# ---------------------------------------------------------------------------
+# Authentik proxy-header authentication (CE feature, default OFF)
+# ---------------------------------------------------------------------------
+# Set AUTHENTIK_PROXY_ENABLED=true to enable. When enabled, AUTHENTIK_PROXY_TRUSTED_IPS
+# must be a non-empty comma-separated list of CIDRs (e.g. "127.0.0.1/32,10.0.0.0/8").
+# The app will refuse to start if enabled with an empty CIDR list.
+
+authentik_proxy_enabled =
+  get_bool_from_path_or_env(config_dir, "AUTHENTIK_PROXY_ENABLED", false)
+
+authentik_proxy_trusted_cidrs =
+  config_dir
+  |> get_var_from_path_or_env("AUTHENTIK_PROXY_TRUSTED_IPS", "")
+  |> String.split(",", trim: true)
+  |> Enum.map(&String.trim/1)
+  |> Enum.reject(&(&1 == ""))
+  |> Enum.map(&Plausible.Auth.Authentik.parse_cidr!/1)
+
+if authentik_proxy_enabled and authentik_proxy_trusted_cidrs == [] do
+  raise """
+  AUTHENTIK_PROXY_ENABLED=true but AUTHENTIK_PROXY_TRUSTED_IPS is empty.
+  Refusing to start: would either trust every source or trust none.
+  Configure the CIDRs of the Authentik outpost (e.g. AUTHENTIK_PROXY_TRUSTED_IPS=127.0.0.1/32).
+  """
+end
+
+config :plausible, :authentik_proxy,
+  enabled: authentik_proxy_enabled,
+  trusted_cidrs: authentik_proxy_trusted_cidrs,
+  group_prefix: get_var_from_path_or_env(config_dir, "AUTHENTIK_PROXY_GROUP_PREFIX", "analytics-")
+
+# ---------------------------------------------------------------------------
+
 hcaptcha_sitekey = get_var_from_path_or_env(config_dir, "HCAPTCHA_SITEKEY")
 hcaptcha_secret = get_var_from_path_or_env(config_dir, "HCAPTCHA_SECRET")
 

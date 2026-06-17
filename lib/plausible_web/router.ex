@@ -10,6 +10,7 @@ defmodule PlausibleWeb.Router do
     plug :put_secure_browser_headers
     plug PlausibleWeb.Plugs.NoRobots
     on_ee(do: nil, else: plug(PlausibleWeb.FirstLaunchPlug, redirect_to: "/register"))
+    plug PlausibleWeb.Plugs.AuthentikProxy
     plug PlausibleWeb.AuthPlug
     on_ee(do: plug(Plausible.Plugs.HandleExpiredSession))
     on_ee(do: plug(Plausible.Plugs.SSOTeamAccess))
@@ -65,6 +66,7 @@ defmodule PlausibleWeb.Router do
   pipeline :api do
     plug :accepts, ["json"]
     plug :fetch_session
+    plug PlausibleWeb.Plugs.AuthentikProxy
     plug PlausibleWeb.AuthPlug
   end
 
